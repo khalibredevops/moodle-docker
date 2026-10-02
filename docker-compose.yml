@@ -1,21 +1,30 @@
 version: '2'
 services:
   db:
-    image: mariadb:10.6
+    image: mariadb:11.8.8
     environment:
       - MYSQL_ROOT_PASSWORD=password
-      - MYSQL_DATABASE=moodle
+      - MYSQL_DATABASE=moodledb
       - MYSQL_USER=moodle
       - MYSQL_PASSWORD=password
+    # environment:
+    #   MOODLE_DATABASE_HOST: 'mariadb'
+    #   MOODLE_DATABASE_NAME: dev_moodledb
+    #   MOODLE_DATABASE_USER: 'devteam'
+    #   MOODLE_DATABASE_PASSWORD: 'devcwdb.2025'
+    #   MOODLE_SKIP_BOOTSTRAP: 'yes'
+    #   MOODLE_SSLPROXY: "true"
+    #   MOODLE_INTERNAL_URL: 'http://moodle-app:8080/lms-service'
     volumes:
-      - ./.data/db:/var/lib/mysql
+      - ./database/db:/docker-entrypoint-initdb.d
+      - ./database/conf/my_custom.cnf:/etc/mysql/conf.d/my_custom.cnf:ro
+      - moodle-mariadb-data:/var/lib/mysql
     ports:
       - 3306:3306
   web:
-    image: lthub/moodle
-    build: .
+    image: khalibre/moodle-base:v4.5.14
     ports:
-      - 8080:80
+      - 8080:8080
     # use the links section if you want to use a container for a database.
     # if not, and you want to use an external database server, configure
     # if with the environment variables in the 'environment' section.
@@ -24,28 +33,30 @@ services:
       - db
     # uncomment the 'volumes' section to enable a shared volume with docker-compose
     volumes:
-      - ./.data/web:/moodledata:rw
+      - moodle-data:/moodledata:rw
       # do not uncomment this when starting a new instance from scratch as
       # init script won't be able to move this file
       #- ./LocalSettings.php:/var/www/html/LocalSettings.php
     environment:
-      - MOODLE_DB_TYPE=mariadb
-      - MOODLE_DB_HOST=db
-      #- MOODLE_DB_PORT=
-      - MOODLE_DB_NAME=moodle
-      - MOODLE_DB_USER=moodle
-      - MOODLE_DB_PASSWORD=password
-      - MOODLE_DB_PREFIX=
-      - MOODLE_URL=http://localhost:8080
+      - MOODLE_DATABASE_TYPE=mariadb
+      - MOODLE_DATABASE_HOST=db
+      # - MOODLE_DB_PORT= 3306
+      - MOODLE_DATABASE_NAME=moodledb
+      - MOODLE_DATABASE_USER=moodle
+      - MOODLE_DATABASE_PASSWORD=password
+      # - MOODLE_DATABASE_PREFIX=
+      - MOODLE_INTERNAL_URL=http://localhost:8080
       #- MOODLE_SITE_FULLNAME=
       #- MOODLE_SITE_SHORTNAME=
       #- MOODLE_SITE_LANG=
-      #- MOODLE_ADMIN_USER=
-      #- MOODLE_ADMIN_PASS=
+      #=======for fresh start==============
+      # - MOODLE_ADMIN_USER=admin
+      # - MOODLE_ADMIN_PASS=admin
+      #====================================
       #- MOODLE_ADMIN_EMAIL=
       #- MOODLE_UPDATE=
       #- MOODLE_REVERSE_PROXY=false
-      #- MOODLE_SSL_PROXY=false
+      #- MOODLE_SSLPROXY=false
       - MOODLE_REDIS_HOST=redis
       - MOODLE_REDIS_PORT=6379
       - MOODLE_REDIS_DB=0
@@ -61,6 +72,11 @@ services:
   redis:
     image: redis:5.0-alpine
     volumes:
-      - ./.data/redis:/data
+      - moodle-redis-data:/data
     ports:
       - 6379:6379
+
+volumes:
+  moodle-data:
+  moodle-mariadb-data:
+  moodle-redis-data:

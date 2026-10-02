@@ -8,60 +8,60 @@ set -e
 : ${MOODLE_ADMIN_USER:=admin}
 : ${MOODLE_ADMIN_PASS:=password}
 : ${MOODLE_ADMIN_EMAIL:=admin@example.com}
-: ${MOODLE_DB_TYPE:=mariadb}
+: ${MOODLE_DATABASE_TYPE:=mariadb}
 : ${MOODLE_ENABLE_SSL:=false}
 : ${MOODLE_UPDATE:=false}
 
-if [ -z "$MOODLE_DB_HOST" ]; then
+if [ -z "$MOODLE_DATABASE_HOST" ]; then
 	if [ -n "$MYSQL_PORT_3306_TCP_ADDR" ]; then
-		MOODLE_DB_HOST=$MYSQL_PORT_3306_TCP_ADDR
+		MOODLE_DATABASE_HOST=$MYSQL_PORT_3306_TCP_ADDR
 	elif [ -n "$POSTGRES_PORT_5432_TCP_ADDR" ]; then
-		MOODLE_DB_TYPE=pgsql
-		MOODLE_DB_HOST=$POSTGRES_PORT_5432_TCP_ADDR
+		MOODLE_DATABASE_TYPE=pgsql
+		MOODLE_DATABASE_HOST=$POSTGRES_PORT_5432_TCP_ADDR
 	elif [ -n "$DB_PORT_3306_TCP_ADDR" ]; then
-		MOODLE_DB_HOST=$DB_PORT_3306_TCP_ADDR
+		MOODLE_DATABASE_HOST=$DB_PORT_3306_TCP_ADDR
 	elif [ -n "$DB_PORT_5432_TCP_ADDR" ]; then
-		MOODLE_DB_TYPE=pgsql
-		MOODLE_DB_HOST=$DB_PORT_5432_TCP_ADDR
+		MOODLE_DATABASE_TYPE=pgsql
+		MOODLE_DATABASE_HOST=$DB_PORT_5432_TCP_ADDR
 	else
-		echo >&2 'error: missing MOODLE_DB_HOST environment variable'
+		echo >&2 'error: missing MOODLE_DATABASE_HOST environment variable'
 		echo >&2 '	Did you forget to --link your database?'
 		exit 1
 	fi
 fi
 
-if [ -z "$MOODLE_DB_USER" ]; then
-	if [ "$MOODLE_DB_TYPE" = "mysql" -o "$MOODLE_DB_TYPE" = "mariadb" ]; then
-		echo >&2 'info: missing MOODLE_DB_USER environment variable, defaulting to "root"'
-		MOODLE_DB_USER=root
-	elif [ "$MOODLE_DB_TYPE" = "pgsql" ]; then
-		echo >&2 'info: missing MOODLE_DB_USER environment variable, defaulting to "postgres"'
-		MOODLE_DB_USER=postgres
+if [ -z "$MOODLE_DATABASE_USER" ]; then
+	if [ "$MOODLE_DATABASE_TYPE" = "mysql" -o "$MOODLE_DATABASE_TYPE" = "mariadb" ]; then
+		echo >&2 'info: missing MOODLE_DATABASE_USER environment variable, defaulting to "root"'
+		MOODLE_DATABASE_USER=root
+	elif [ "$MOODLE_DATABASE_TYPE" = "pgsql" ]; then
+		echo >&2 'info: missing MOODLE_DATABASE_USER environment variable, defaulting to "postgres"'
+		MOODLE_DATABASE_USER=postgres
 	else
-		echo >&2 'error: missing required MOODLE_DB_USER environment variable'
+		echo >&2 'error: missing required MOODLE_DATABASE_USER environment variable'
 		exit 1
 	fi
 fi
 
-if [ -z "$MOODLE_DB_PASSWORD" ]; then
+if [ -z "$MOODLE_DATABASE_PASSWORD" ]; then
 	if [ -n "$MYSQL_ENV_MYSQL_ROOT_PASSWORD" ]; then
-		MOODLE_DB_PASSWORD=$MYSQL_ENV_MYSQL_ROOT_PASSWORD
+		MOODLE_DATABASE_PASSWORD=$MYSQL_ENV_MYSQL_ROOT_PASSWORD
 	elif [ -n "$POSTGRES_ENV_POSTGRES_PASSWORD" ]; then
-		MOODLE_DB_PASSWORD=$POSTGRES_ENV_POSTGRES_PASSWORD
+		MOODLE_DATABASE_PASSWORD=$POSTGRES_ENV_POSTGRES_PASSWORD
 	elif [ -n "$DB_ENV_MYSQL_ROOT_PASSWORD" ]; then
-		MOODLE_DB_PASSWORD=$DB_ENV_MYSQL_ROOT_PASSWORD
+		MOODLE_DATABASE_PASSWORD=$DB_ENV_MYSQL_ROOT_PASSWORD
 	elif [ -n "$DB_ENV_POSTGRES_PASSWORD" ]; then
-		MOODLE_DB_PASSWORD=$DB_ENV_POSTGRES_PASSWORD
+		MOODLE_DATABASE_PASSWORD=$DB_ENV_POSTGRES_PASSWORD
 	else
-		echo >&2 'error: missing required MOODLE_DB_PASSWORD environment variable'
-		echo >&2 '	Did you forget to -e MOODLE_DB_PASSWORD=... ?'
+		echo >&2 'error: missing required MOODLE_DATABASE_PASSWORD environment variable'
+		echo >&2 '	Did you forget to -e MOODLE_DATABASE_PASSWORD=... ?'
 		echo >&2
-		echo >&2 '	(Also of interest might be MOODLE_DB_USER and MOODLE_DB_NAME)'
+		echo >&2 '	(Also of interest might be MOODLE_DATABASE_USER and MOODLE_DATABASE_NAME)'
 		exit 1
 	fi
 fi
 
-: ${MOODLE_DB_NAME:=moodle}
+: ${MOODLE_DATABASE_NAME:=moodle}
 
 if [ -z "$MOODLE_DB_PORT" ]; then
 	if [ -n "$MYSQL_PORT_3306_TCP_PORT" ]; then
@@ -72,36 +72,36 @@ if [ -z "$MOODLE_DB_PORT" ]; then
 		MOODLE_DB_PORT=$DB_PORT_3306_TCP_PORT
 	elif [ -n "$DB_PORT_5432_TCP_PORT" ]; then
 		MOODLE_DB_PORT=$DB_PORT_5432_TCP_PORT
-	elif [ "$MOODLE_DB_TYPE" = "mysql" -o "$MOODLE_DB_TYPE" = "mariadb" ]; then
+	elif [ "$MOODLE_DATABASE_TYPE" = "mysql" -o "$MOODLE_DATABASE_TYPE" = "mariadb" ]; then
 		MOODLE_DB_PORT="3306"
-	elif [ "$MOODLE_DB_TYPE" = "pgsql" ]; then
+	elif [ "$MOODLE_DATABASE_TYPE" = "pgsql" ]; then
 		MOODLE_DB_PORT="5432"
 	fi
 fi
 
 # Wait for the DB to come up
-while [ `/bin/nc -w 1 $MOODLE_DB_HOST $MOODLE_DB_PORT < /dev/null > /dev/null; echo $?` != 0 ]; do
-    echo "Waiting for $MOODLE_DB_TYPE database to come up at $MOODLE_DB_HOST:$MOODLE_DB_PORT..."
+while [ `/bin/nc -w 1 $MOODLE_DATABASE_HOST $MOODLE_DB_PORT < /dev/null > /dev/null; echo $?` != 0 ]; do
+    echo "Waiting for $MOODLE_DATABASE_TYPE database to come up at $MOODLE_DATABASE_HOST:$MOODLE_DB_PORT..."
     sleep 1
 done
 echo "Database is up and running."
 
-export MOODLE_DB_TYPE MOODLE_DB_HOST MOODLE_DB_USER MOODLE_DB_PASSWORD MOODLE_DB_NAME
+export MOODLE_DATABASE_TYPE MOODLE_DATABASE_HOST MOODLE_DATABASE_USER MOODLE_DATABASE_PASSWORD MOODLE_DATABASE_NAME
 
 TERM=dumb php -- <<'EOPHP'
 <?php
 // database might not exist, so let's try creating it (just to be safe)
 
-if (getenv('MOODLE_DB_TYPE') == 'mysql' || getenv('MOODLE_DB_TYPE') == 'mariadb') {
+if (getenv('MOODLE_DATABASE_TYPE') == 'mysql' || getenv('MOODLE_DATABASE_TYPE') == 'mariadb') {
 
-    $mysql = new mysqli(getenv('MOODLE_DB_HOST'), getenv('MOODLE_DB_USER'), getenv('MOODLE_DB_PASSWORD'), '', (int)getenv('MOODLE_DB_PORT'));
+    $mysql = new mysqli(getenv('MOODLE_DATABASE_HOST'), getenv('MOODLE_DATABASE_USER'), getenv('MOODLE_DATABASE_PASSWORD'), '', (int)getenv('MOODLE_DB_PORT'));
 
     if ($mysql->connect_error) {
         file_put_contents('php://stderr', 'MySQL Connection Error: (' . $mysql->connect_errno . ') ' . $mysql->connect_error . "\n");
         exit(1);
     }
 
-    if (!$mysql->query('CREATE DATABASE IF NOT EXISTS `' . $mysql->real_escape_string(getenv('MOODLE_DB_NAME')) . '`')) {
+    if (!$mysql->query('CREATE DATABASE IF NOT EXISTS `' . $mysql->real_escape_string(getenv('MOODLE_DATABASE_NAME')) . '`')) {
         file_put_contents('php://stderr', 'MySQL "CREATE DATABASE" Error: ' . $mysql->error . "\n");
     }
 
@@ -168,21 +168,43 @@ elif [ -e "/etc/apache2/mods-enabled/ssl.load" ]; then
 fi
 
 # Install database if installed file doesn't exist
-if [ ! -e "$MOODLE_SHARED/installed" -a ! -f "$MOODLE_SHARED/install.lock" ]; then
+if sudo -E -H -u www-data php admin/cli/isinstalled.php >/dev/null 2>&1; then
+    echo "Moodle already installed."
+    touch "$MOODLE_SHARED/installed"
+else
     echo "Moodle database is not initialized. Initializing..."
-    touch $MOODLE_SHARED/install.lock
-    sudo -E -H -u www-data php admin/cli/install_database.php \
-        --agree-license \
-        --lang="$MOODLE_SITE_LANG" \
-        --adminuser=$MOODLE_ADMIN_USER \
-        --adminpass=$MOODLE_ADMIN_PASS \
-        --adminemail=$MOODLE_ADMIN_EMAIL \
-        --fullname="$MOODLE_SITE_FULLNAME" \
-        --shortname="$MOODLE_SITE_SHORTNAME"
+    touch "$MOODLE_SHARED/install.lock"
 
-    touch $MOODLE_SHARED/installed
-    rm $MOODLE_SHARED/install.lock
-    echo "Done."
+    set +e
+    INSTALL_OUTPUT=$(
+        sudo -E -H -u www-data php admin/cli/install_database.php \
+            --agree-license \
+            --lang="$MOODLE_SITE_LANG" \
+            --adminuser="$MOODLE_ADMIN_USER" \
+            --adminpass="$MOODLE_ADMIN_PASS" \
+            --adminemail="$MOODLE_ADMIN_EMAIL" \
+            --fullname="$MOODLE_SITE_FULLNAME" \
+            --shortname="$MOODLE_SITE_SHORTNAME" 2>&1
+    )
+    INSTALL_RC=$?
+    set -e
+
+    echo "$INSTALL_OUTPUT"
+
+    if [ $INSTALL_RC -eq 0 ]; then
+        echo "Moodle installation completed."
+        touch "$MOODLE_SHARED/installed"
+
+    elif echo "$INSTALL_OUTPUT" | grep -q "Database tables already present"; then
+        echo "Database already initialized. Skipping installation."
+        touch "$MOODLE_SHARED/installed"
+
+    else
+        rm -f "$MOODLE_SHARED/install.lock"
+        exit $INSTALL_RC
+    fi
+
+    rm -f "$MOODLE_SHARED/install.lock"
 fi
 
 # Sync SMTP / noreply settings from env into Moodle's mdl_config on every
@@ -220,7 +242,7 @@ if [ -e "$MOODLE_SHARED/installed" ]; then
     # Register the redis_app cache store via cache_config_writer when redis
     # is available. Idempotent — script no-ops if already registered.
     # Mode mappings (Application/Request -> redis_app) are still admin-UI only.
-    if [ -n "$REDIS_HOST" ]; then
+    if [ -n "$MOODLE_REDIS_HOST" ]; then
         sudo -E -H -u www-data php /var/www/html/register-redis-cache-store.php
     fi
 fi

@@ -42,13 +42,13 @@ function loadenv($envName, $default = "") {
     return getenv($envName) ? getenv($envName) : $default;
 }
 
-$CFG->dbtype    = loadenv('MOODLE_DB_TYPE', 'mariadb');      // 'pgsql', 'mariadb', 'mysqli', 'sqlsrv' or 'oci'
+$CFG->dbtype    = loadenv('MOODLE_DATABASE_TYPE', 'mariadb');      // 'pgsql', 'mariadb', 'mysqli', 'sqlsrv' or 'oci'
 $CFG->dblibrary = 'native';     // 'native' only at the moment
-$CFG->dbhost    = loadenv('MOODLE_DB_HOST', 'localhost');  // eg 'localhost' or 'db.isp.com' or IP
-$CFG->dbname    = loadenv('MOODLE_DB_NAME', 'moodle');     // database name, eg moodle
-$CFG->dbuser    = loadenv('MOODLE_DB_USER', 'username');   // your database username
-$CFG->dbpass    = loadenv('MOODLE_DB_PASSWORD', 'password');   // your database password
-$CFG->prefix    = loadenv('MOODLE_DB_PREFIX', 'mdl_');       // prefix to use for all table names
+$CFG->dbhost    = loadenv('MOODLE_DATABASE_HOST', 'localhost');  // eg 'localhost' or 'db.isp.com' or IP
+$CFG->dbname    = loadenv('MOODLE_DATABASE_NAME', 'moodle');     // database name, eg moodle
+$CFG->dbuser    = loadenv('MOODLE_DATABASE_USER', 'username');   // your database username
+$CFG->dbpass    = loadenv('MOODLE_DATABASE_PASSWORD', 'password');   // your database password
+$CFG->prefix    = loadenv('MOODLE_DATABASE_PREFIX', 'mdl_');       // prefix to use for all table names
 $CFG->dboptions = array(
     'dbpersist' => false,       // should persistent database connections be
                                 //  used? set to 'false' for the most stable
@@ -97,7 +97,18 @@ $CFG->dboptions = array(
 // If you need both intranet and Internet access please read
 // http://docs.moodle.org/en/masquerading
 
-$CFG->wwwroot   = loadenv('MOODLE_URL', 'http://example.com/moodle');
+$CFG->wwwroot = 'http://localhost:8080/lms-service'; // Fallback for CLI/cron
+if (isset($_SERVER['HTTP_HOST'])) {
+    $protocol = 'http://';
+
+    if (
+        (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ||
+        (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https')
+    ) {
+        $protocol = 'https://';
+    }
+    $CFG->wwwroot = $protocol . $_SERVER['HTTP_HOST'] . '/lms-service';
+}
 
 
 //=========================================================================
@@ -276,13 +287,13 @@ $CFG->admin = 'admin';
 //                                                        // for tuning php-memcached 3.0.x (PHP 7)
 //
 //   Redis session handler (requires redis server and redis extension):
-if (getenv('REDIS_HOST')) {
+if (getenv('MOODLE_REDIS_HOST')) {
     $CFG->session_handler_class = '\core\session\redis';
-    $CFG->session_redis_host = loadenv('REDIS_HOST', '127.0.0.1');
-    $CFG->session_redis_port = loadenv('REDIS_PORT', 6379);  // Optional.
-    $CFG->session_redis_database = loadenv('REDIS_DB', 0);  // Optional, default is db 0.
+    $CFG->session_redis_host = loadenv('MOODLE_REDIS_HOST', '127.0.0.1');
+    $CFG->session_redis_port = loadenv('MOODLE_REDIS_PORT', 6379);  // Optional.
+    $CFG->session_redis_database = loadenv('MOODLE_REDIS_DB', 0);  // Optional, default is db 0.
     $CFG->session_redis_auth = ''; // Optional, default is don't set one.
-    $CFG->session_redis_prefix = loadenv('REDIS_PREFIX', ''); // Optional, default is don't set one.
+    $CFG->session_redis_prefix = loadenv('MOODLE_REDIS_PREFIX', ''); // Optional, default is don't set one.
     $CFG->session_redis_acquire_lock_timeout = 120;
     $CFG->session_redis_lock_expire = 7200;
 }
@@ -322,7 +333,7 @@ $CFG->reverseproxy = filter_var(loadenv('MOODLE_REVERSE_PROXY', false), FILTER_V
 //
 // Enable when using external SSL appliance for performance reasons.
 // Please note that site may be accessible via http: or https:, but not both!
-$CFG->sslproxy = filter_var(loadenv('MOODLE_SSL_PROXY', false), FILTER_VALIDATE_BOOLEAN);
+$CFG->sslproxy = filter_var(loadenv('MOODLE_SSLPROXY', false), FILTER_VALIDATE_BOOLEAN);
 //
 // When true, Moodle will not send any emails. Use on staging/test
 // environments to prevent accidental notifications to real users.

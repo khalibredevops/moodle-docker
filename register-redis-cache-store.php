@@ -20,13 +20,13 @@
 define('CLI_SCRIPT', true);
 require __DIR__ . '/config.php';
 
-if (!getenv('REDIS_HOST')) {
+if (!getenv('MOODLE_REDIS_HOST')) {
     exit(0);
 }
 
 $desired = [
-    'server'     => getenv('REDIS_HOST') . ':' . (getenv('REDIS_PORT') ?: '6379'),
-    'prefix'     => getenv('REDIS_PREFIX') ?: '',
+    'server'     => getenv('MOODLE_REDIS_HOST') . ':' . (getenv('MOODLE_REDIS_PORT') ?: '6379'),
+    'prefix'     => getenv('MOODLE_REDIS_PREFIX') ?: '',
     'serializer' => 1, // PHP serializer
 ];
 
