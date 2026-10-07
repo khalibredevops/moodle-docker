@@ -97,19 +97,10 @@ $CFG->dboptions = array(
 // If you need both intranet and Internet access please read
 // http://docs.moodle.org/en/masquerading
 
-$CFG->wwwroot = 'http://localhost:8080/lms-service'; // Fallback for CLI/cron
-if (isset($_SERVER['HTTP_HOST'])) {
-    $protocol = 'http://';
-
-    if (
-        (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ||
-        (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https')
-    ) {
-        $protocol = 'https://';
-    }
-    $CFG->wwwroot = $protocol . $_SERVER['HTTP_HOST'] . '/lms-service';
-}
-
+$CFG->wwwroot = loadenv(
+    'MOODLE_WWWROOT',
+    'http://localhost:8080/lms-service'
+);
 
 //=========================================================================
 // 3. DATA FILES LOCATION
