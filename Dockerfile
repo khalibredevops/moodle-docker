@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 FROM php:8.3-apache
-LABEL maintainer="Tyler Cinkant <tyler.cinkant@ubc.ca>"
+LABEL maintainer="Khalibre <infra@khalibre.com>"
 
 ENV UPLOAD_MAX_FILESIZE=20M
 ENV PHP_MEMORY_LIMIT=128M
@@ -73,6 +73,14 @@ RUN set -eux; \
         echo 'RemoteIPTrustedProxy 127.0.0.0/8'; \
      } > /etc/apache2/conf-available/remoteip.conf; \
     a2enconf remoteip; \
+    \
+    # Change Apache to listen on port 8080
+    sed -ri 's/^Listen 80$/Listen 8080/' /etc/apache2/ports.conf; \
+    \
+    # Update the default VirtualHost
+    sed -ri 's/<VirtualHost \*:80>/<VirtualHost *:8080>/' \
+        /etc/apache2/sites-available/000-default.conf; \
+    \
 # https://github.com/docker-library/wordpress/issues/383#issuecomment-507886512
 # (replace all instances of "%h" with "%a" in LogFormat)
     find /etc/apache2 -type f -name '*.conf' -exec sed -ri 's/([[:space:]]*LogFormat[[:space:]]+"[^"]*)%h([^"]*")/\1%a\2/g' '{}' +
@@ -177,7 +185,7 @@ RUN set -eux; \
     rm -rf /plugins
 
 VOLUME /moodledata
-EXPOSE 80
+EXPOSE 8080
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["apachectl", "-e", "info", "-D", "FOREGROUND"]

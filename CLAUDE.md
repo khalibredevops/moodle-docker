@@ -54,9 +54,9 @@ A real Moodle `config.php` checked in at the repo root and `COPY`ed to `/var/www
 
 | Var | Effect |
 | --- | --- |
-| `MOODLE_DB_TYPE` / `_HOST` / `_NAME` / `_USER` / `_PASSWORD` / `_PREFIX` / `_PORT` | DB connection. `dbcollation=utf8mb4_unicode_ci`. |
-| `MOODLE_URL` | `$CFG->wwwroot` (no trailing slash). |
-| `MOODLE_REVERSE_PROXY`, `MOODLE_SSL_PROXY` | Boolean flags for proxied/HTTPS-terminated deploys. |
+| `MOODLE_DATABASE_TYPE` / `_HOST` / `_NAME` / `_USER` / `_PASSWORD` / `_PREFIX` / `_PORT` | DB connection. `dbcollation=utf8mb4_unicode_ci`. |
+| `MOODLE_INTERNAL_URL` | `$CFG->wwwroot` (no trailing slash). |
+| `MOODLE_REVERSE_PROXY`, `MOODLE_SSLPROXY` | Boolean flags for proxied/HTTPS-terminated deploys. |
 | `MOODLE_NOEMAILEVER` | Boolean; set `true` on staging/test to suppress all outbound mail. **Must stay false in prod.** |
 | `MOODLE_DISABLE_UPDATE_AUTODEPLOY` | Boolean; defaults to `true`. |
 | `REDIS_HOST` / `REDIS_PORT` / `REDIS_DB` / `REDIS_PREFIX` | When `REDIS_HOST` is set, sessions switch to `\core\session\redis` automatically. |
