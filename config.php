@@ -97,9 +97,58 @@ $CFG->dboptions = array(
 // If you need both intranet and Internet access please read
 // http://docs.moodle.org/en/masquerading
 
-$CFG->wwwroot = loadenv(
-    'MOODLE_WWWROOT',
-    'http://localhost:8080/lms-service'
+// $CFG->wwwroot = loadenv(
+//     'MOODLE_WWWROOT',
+//     'http://localhost:8080/lms-service'
+// );
+
+$internalUrl = loadenv('MOODLE_INTERNAL_URL', '');
+$sslProxy = filter_var(loadenv('MOODLE_SSLPROXY', false), FILTER_VALIDATE_BOOLEAN);
+
+
+// Detect internal Docker communication
+$isInternalRequest = false;
+
+if (!empty($_SERVER['HTTP_HOST'])) {
+    $host = $_SERVER['HTTP_HOST'];
+
+    if (
+        $host === 'moodle-app' ||
+        strpos($host, 'moodle-app:') === 0
+    ) {
+        $isInternalRequest = true;
+    }
+}
+
+
+// Internal communication
+if ($isInternalRequest && !empty($internalUrl)) {
+
+    $CFG->wwwroot = rtrim($internalUrl, '/');
+
+} else {
+
+    // Public URL comes from Traefik request
+    $scheme = 'http';
+
+    if (
+        $sslProxy ||
+        (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ||
+        ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https'
+    ) {
+        $scheme = 'https';
+    }
+
+    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+
+    $CFG->wwwroot = $scheme . '://' . $host;
+}
+
+
+$CFG->sslproxy = $sslProxy;
+$CFG->reverseproxy = filter_var(
+    loadenv('MOODLE_REVERSE_PROXY', false),
+    FILTER_VALIDATE_BOOLEAN
 );
 
 //=========================================================================
