@@ -1,12 +1,15 @@
 # syntax=docker/dockerfile:1.7
-FROM php:8.3-apache
+FROM php:8.2.35-apache-bookworm@sha256:5714c8607608e50d880a5f222fab556edecd4a11b9c50c81fce1c7932c1cf604
 LABEL maintainer="Khalibre <infra@khalibre.com>"
 
 ENV UPLOAD_MAX_FILESIZE=20M
-ENV PHP_MEMORY_LIMIT=128M
+ENV PHP_MEMORY_LIMIT=512M
 ENV PHP_MAX_EXECUTION_TIME=30
 ENV PHP_MAX_INPUT_VARS=6000
 
+# Layer 4 (volatile): Moodle source. Isolated so MOODLE_VERSION bumps don't
+# invalidate the apt/extensions layers above.
+ARG MOODLE_VERSION=4.5.5
 ARG DEBIAN_FRONTEND=noninteractive
 
 WORKDIR /var/www/html
@@ -85,9 +88,6 @@ RUN set -eux; \
 # (replace all instances of "%h" with "%a" in LogFormat)
     find /etc/apache2 -type f -name '*.conf' -exec sed -ri 's/([[:space:]]*LogFormat[[:space:]]+"[^"]*)%h([^"]*")/\1%a\2/g' '{}' +
 
-# Layer 4 (volatile): Moodle source. Isolated so MOODLE_VERSION bumps don't
-# invalidate the apt/extensions layers above.
-ARG MOODLE_VERSION=4.5.14
 ENV MOODLE_VERSION=${MOODLE_VERSION}
 RUN set -eux; \
     curl -fL "https://github.com/moodle/moodle/archive/v${MOODLE_VERSION}.tar.gz" | tar xz --strip=1; \
